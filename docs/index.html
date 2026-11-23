@@ -1,811 +1,631 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HUC8 Watershed Explorer</title>
-<link rel="icon" href="data:,">
-<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-<style>
-:root {
-  color-scheme: light;
-  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
-  --grid: #e1e0d9; --accent: #2a78d6; --accent-wash: rgba(42,120,214,0.10);
-}
-@media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme="light"])) {
-    color-scheme: dark;
-    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink2: #c3c2b7; --muted: #898781;
-    --grid: #2c2c2a; --accent: #3987e5; --accent-wash: rgba(57,135,229,0.14);
-  }
-}
-* { box-sizing: border-box; }
-html, body { height: 100%; }
-body { margin: 0; background: var(--page); color: var(--ink);
-  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
-  display: flex; flex-direction: column; }
-a { color: var(--accent); text-decoration: none; } a:hover { text-decoration: underline; }
-nav.top { display: flex; gap: 12px; align-items: center; padding: 10px 16px; flex-wrap: wrap;
-  background: var(--surface); border-bottom: 1px solid var(--grid); }
-nav.top .title { font-weight: 650; }
-nav.top .badge { font-size: 11px; padding: 1px 6px; border-radius: 4px;
-  border: 1px solid var(--grid); color: var(--ink2); }
-nav.top .spacer { margin-left: auto; }
-button.btn { padding: 5px 10px; border-radius: 6px; border: 1px solid var(--grid);
-  background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; }
-button.btn:hover { border-color: var(--accent); }
-select, input[type="search"] { padding: 5px 8px; border-radius: 6px; border: 1px solid var(--grid);
-  background: var(--surface); color: var(--ink); font: inherit; max-width: 100%; }
-select:hover { border-color: var(--accent); }
-label.fld { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--ink2); }
-main { flex: 1; min-height: 0; display: grid; gap: 12px; padding: 12px 16px 16px;
-  grid-template-columns: minmax(0, 3fr) minmax(300px, 1fr); }
-@media (max-width: 860px) { main { grid-template-columns: 1fr; grid-template-rows: 60vh auto; } }
-.panel { background: var(--surface); border: 1px solid var(--grid); border-radius: 8px; overflow: hidden; }
-#map { height: 100%; min-height: 360px; }
-aside { display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: auto; }
-aside .panel { padding: 0; flex: none; }
-.panel h3 { margin: 0; padding: 10px 12px 4px; font-size: 14px; font-weight: 650; }
-.panel .body { padding: 4px 12px 12px; color: var(--ink2); font-size: 13px; }
-.placeholder { color: var(--muted); }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Utah Natural Hidden Gems</title>
 
-/* Basin readout */
-#basin .name { font-size: 16px; font-weight: 650; color: var(--ink); line-height: 1.25; }
-#basin dl { margin: 10px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; }
-#basin dt { color: var(--muted); font-size: 12px; }
-#basin dd { margin: 0; color: var(--ink); font-size: 13px; font-variant-numeric: tabular-nums; }
-#basin .pinned { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 4px;
-  background: var(--accent-wash); color: var(--accent); margin-top: 8px; }
+    <link rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
-/* Controls */
-.ctl { display: flex; flex-direction: column; gap: 10px; }
-.seg { display: flex; border: 1px solid var(--grid); border-radius: 6px; overflow: hidden; }
-.seg button { flex: 1; padding: 5px 8px; border: 0; background: var(--surface); color: var(--ink2);
-  font: inherit; font-size: 12px; cursor: pointer; }
-.seg button[aria-pressed="true"] { background: var(--accent-wash); color: var(--accent); font-weight: 600; }
-.chk { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink); }
+    <style>
+        * {
+            box-sizing: border-box;
+        }
 
-/* Search */
-#results { list-style: none; margin: 6px 0 0; padding: 0; max-height: 190px; overflow: auto; }
-#results li { padding: 5px 8px; border-radius: 5px; cursor: pointer; font-size: 13px; color: var(--ink); }
-#results li:hover, #results li[aria-selected="true"] { background: var(--accent-wash); }
-#results .code { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f3f1e9;
+            color: #304536;
+        }
 
-/* Legend */
-.narr { margin: 10px 0 0; color: var(--ink2); font-size: 12.5px; line-height: 1.5; }
-.src { margin: 10px 0 0; color: var(--muted); font-size: 11px; }
-#ainote .body p { margin: 0 0 9px; }
-#ainote code { font: 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
-  background: var(--accent-wash); color: var(--ink2); padding: 1px 4px; border-radius: 3px; }
-#flood .name { font-size: 15px; font-weight: 650; color: var(--ink); line-height: 1.25; }
-#flood dl { margin: 10px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; }
-#flood dt { color: var(--muted); font-size: 12px; }
-#flood dd { margin: 0; color: var(--ink); font-size: 13px; font-variant-numeric: tabular-nums; }
-#flood .pinned { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 4px;
-  background: var(--accent-wash); color: var(--accent); margin-top: 6px; }
-.dot { display: inline-block; border-radius: 50%; flex: none; box-shadow: 0 0 0 1px var(--grid); }
-.legend-item { display: flex; align-items: center; gap: 8px; margin: 5px 0; font-size: 13px; }
-/* Ring keeps pale swatches (e.g. the state line over imagery) visible
-   against the panel without shifting the color they report. */
-.sw { display: inline-block; width: 13px; height: 13px; border-radius: 3px; flex: none;
-  box-shadow: 0 0 0 1px var(--grid); }
-.ramp { height: 11px; border-radius: 3px; margin: 6px 0 3px; box-shadow: 0 0 0 1px var(--grid); }
-.ramp-ends { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted);
-  font-variant-numeric: tabular-nums; }
+        header {
+            background: #294b38;
+            color: white;
+            padding: 18px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
 
-.maplibregl-popup-content { background: var(--surface); color: var(--ink); font: 12px/1.4 system-ui, sans-serif; }
-#loading { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none;
-  color: var(--ink2); font-size: 13px; }
-.panel { position: relative; }
-</style>
+        header h1 {
+            margin: 0;
+            font-size: 25px;
+            letter-spacing: 1px;
+        }
+
+        header p {
+            margin: 5px 0 0;
+            color: #d9e4d8;
+            font-size: 13px;
+        }
+
+        .header-tag {
+            font-size: 12px;
+            border: 1px solid #b5c6b3;
+            padding: 8px 12px;
+            border-radius: 20px;
+        }
+
+        .layout {
+            display: flex;
+            min-height: 700px;
+        }
+
+        .sidebar {
+            width: 320px;
+            min-width: 290px;
+            background: #f8f7f1;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid #d8ddcf;
+        }
+
+        .sidebar h2 {
+            font-size: 19px;
+            margin: 0 0 6px;
+        }
+
+        .description {
+            font-size: 13px;
+            color: #657267;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .section {
+            border-top: 1px solid #d8ddcf;
+            padding: 17px 0;
+        }
+
+        .section h3 {
+            font-size: 14px;
+            margin: 0 0 12px;
+            color: #294b38;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        #search {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #cbd4c8;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .layer-option {
+            display: block;
+            margin: 12px 0;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .layer-option input {
+            margin-right: 8px;
+            accent-color: #294b38;
+        }
+
+        .dot {
+            display: inline-block;
+            height: 11px;
+            width: 11px;
+            border-radius: 50%;
+            margin-right: 7px;
+        }
+
+        .info-box {
+            background: white;
+            border: 1px solid #dce1d6;
+            border-radius: 7px;
+            padding: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+            min-height: 65px;
+            overflow-wrap: anywhere;
+        }
+
+        .info-box p {
+            margin: 5px 0;
+        }
+
+        .map-area {
+            flex: 1;
+            min-width: 0;
+            padding: 15px;
+        }
+
+        #map {
+            width: 100%;
+            height: 670px;
+            border-radius: 9px;
+            border: 2px solid #294b38;
+            box-shadow: 0 3px 12px rgba(0,0,0,.15);
+        }
+
+        .map-tools {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            color: #596b5c;
+        }
+
+        button {
+            background: #294b38;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 9px 13px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #41664c;
+        }
+
+        .legend {
+            background: white;
+            padding: 11px 14px;
+            border-radius: 7px;
+            box-shadow: 0 1px 7px rgba(0,0,0,.25);
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        .legend strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        footer {
+            background: #294b38;
+            color: white;
+            padding: 14px;
+            text-align: center;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        @media (max-width: 800px) {
+            .layout {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .map-area {
+                padding: 10px;
+            }
+
+            #map {
+                height: 550px;
+            }
+        }
+    </style>
 </head>
+
 <body>
 
-<nav class="top">
-  <span class="title">HUC8 Watershed Explorer</span>
-  <span class="badge">USGS WBD &middot; 2,456 subbasins</span>
-  <span class="spacer"></span>
-  <label class="fld" style="flex-direction:row;align-items:center;gap:6px">
-    Basemap
-    <select id="basemap"></select>
-  </label>
-  <button class="btn" id="proj" type="button">Switch to globe</button>
-</nav>
+<header>
+    <div>
+        <h1>UTAH NATURAL HIDDEN GEMS</h1>
+        <p>An Interactive Guide to Utah's Natural Beauty</p>
+    </div>
 
-<main>
-  <div class="panel">
-    <div id="map"></div>
-    <div id="loading">Loading watershed boundaries&hellip;</div>
-  </div>
+    <div class="header-tag">CCE 114 · GEOMATICS</div>
+</header>
 
-  <aside>
-    <section class="panel" id="basin">
-      <h3>Basin</h3>
-      <div class="body" id="basin-body">
-        <div class="placeholder">Hover a watershed on the map to see its details. Click to pin it.</div>
-      </div>
-    </section>
+<div class="layout">
 
-    <section class="panel" id="flood">
-      <h3>Flood event</h3>
-      <div class="body" id="flood-body">
-        <div class="placeholder">Click a red flood point for its full report.</div>
-      </div>
-    </section>
+    <aside class="sidebar">
 
-    <section class="panel">
-      <h3>Find a basin</h3>
-      <div class="body">
-        <input type="search" id="search" placeholder="Name or HUC8 code&hellip;" style="width:100%"
-               autocomplete="off" aria-label="Search basins by name or HUC8 code">
-        <ul id="results"></ul>
-      </div>
-    </section>
+        <h2>Explore Utah</h2>
 
-    <section class="panel">
-      <h3>Display</h3>
-      <div class="body ctl">
-        <label class="fld">Color basins by
-          <div class="seg" id="colormode">
-            <button type="button" data-mode="uniform" aria-pressed="true">Uniform</button>
-            <button type="button" data-mode="area" aria-pressed="false">Area</button>
-          </div>
-        </label>
-        <label class="fld">Region
-          <select id="region"></select>
-        </label>
-        <label class="chk"><input type="checkbox" id="t-huc8" checked> Watershed boundaries</label>
-        <label class="chk"><input type="checkbox" id="t-fill" checked> Basin fill</label>
-        <label class="chk"><input type="checkbox" id="t-states" checked> State boundaries</label>
-        <label class="chk"><input type="checkbox" id="t-floods" checked> Flood events (2026)</label>
-        <label class="fld">Flood events shown
-          <div class="seg" id="floodsev">
-            <button type="button" data-sev="all" aria-pressed="true">All</button>
-            <button type="button" data-sev="major" aria-pressed="false">Major only</button>
-          </div>
-        </label>
-      </div>
-    </section>
+        <p class="description">
+            Discover the natural wonders of Utah.
+            Explore unique landscapes, beautiful water features,
+            mountain destinations, and national parks.
+            Select a layer or click a location on the map
+            to learn more.
+        </p>
 
-    <section class="panel" id="legend">
-      <h3>Legend</h3>
-      <div class="body" id="legend-body"></div>
-    </section>
+        <div class="section">
+            <h3>Find a Hidden Gem</h3>
+            <input
+                type="text"
+                id="search"
+                placeholder="Search by location name..."
+            >
+            <button id="searchButton" style="width:100%; margin-top:8px;">
+                Search Map
+            </button>
+            <p id="searchMessage" style="font-size:12px;"></p>
+        </div>
 
-    <section class="panel">
-      <h3>About this map</h3>
-      <div class="body">
-        <p>HUC8 subbasins (Watershed Boundary Dataset) and US state boundaries, drawn over a
-          switchable basemap. Hover any basin for its name, code, area and states; click to pin it.
-          Red points are 2026 flood events &mdash; click one for its full report.</p>
-        <p><strong>Flood coverage runs 1 Jan &ndash; 31 Jul 2026.</strong> NOAA publishes the Storm
-          Events Database on roughly a three-month lag, so later events are not in it yet. That
-          window holds 3,971 floods, 39 deaths and $1.4&nbsp;billion in damage.</p>
-        <p>Floods: <a href="https://www.ncei.noaa.gov/products/storm-events-database"
-          target="_blank" rel="noopener">NOAA NCEI Storm Events Database</a>. A point marks where the
-          event began; damage figures are the reporting office's estimate, not an audited loss.</p>
-        <p>Boundaries: <a href="https://www.usgs.gov/national-hydrography/watershed-boundary-dataset"
-          target="_blank" rel="noopener">USGS WBD</a>, simplified for the web &mdash; use the source data
-          for analysis, not these outlines. States: US Census TIGER (1:20m).</p>
-        <p>Built for <a href="https://byu-hydroinformatics.github.io/cce114-geomatics/assignments/web-mapping-with-ai/"
-          target="_blank" rel="noopener">CCE 114 &mdash; Web Mapping with AI</a>.</p>
-      </div>
-    </section>
+        <div class="section">
+            <h3>Map Layers</h3>
 
-    <section class="panel" id="ainote">
-      <h3>AI note</h3>
-      <div class="body">
-        <p>I built this with Claude Code (Claude Opus 5) in VS Code, using MapLibre GL JS for the
-          map, mapshaper to simplify the geometry, and Playwright to drive a real browser while
-          testing. The data is from the USGS Watershed Boundary Dataset, Census TIGER, and the
-          NOAA NCEI Storm Events Database.</p>
-        <p>Three prompts did most of the work. The first asked for HUC8 and state boundaries with
-          a hover readout and a basemap switcher. The second asked for a 2026 flood points layer
-          where clicking a point shows the full storm record. The third was just
-          &ldquo;layers don&rsquo;t show up&rdquo; &mdash; which turned out to matter most.</p>
-        <p>The AI got the loading logic wrong. It gated drawing on MapLibre&rsquo;s
-          <code>isStyleLoaded()</code>, which reports false while the basemap&rsquo;s own sources
-          are still downloading, long after the style itself has loaded. On localhost the GeoJSON
-          arrived fast enough to hide it; published to GitHub Pages, the 0.9&nbsp;MB basin file
-          arrived second, found that false, and nothing ever drew. The map stayed blank until you
-          switched basemaps. We caught it by running the browser tests against the live URL instead
-          of localhost, and fixed it with an explicit ready flag set by the style-load event.</p>
-        <p>I checked the things I would not want to get wrong. One event reported 5 deaths and 5
-          injuries, which looked like a column-mapping bug, so I opened NOAA&rsquo;s source CSV and
-          confirmed the record really does say both. I also confirmed the flood data stops at
-          31 July 2026 because of NOAA&rsquo;s reporting lag, rather than assuming a full year, and
-          said so on the map instead of letting it look complete.</p>
-      </div>
-    </section>
-  </aside>
-</main>
+            <label class="layer-option">
+                <input type="checkbox" id="uniqueToggle" checked>
+                <span class="dot" style="background:blue;"></span>
+                Unique Landscapes
+            </label>
 
-<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+            <label class="layer-option">
+                <input type="checkbox" id="waterToggle" checked>
+                <span class="dot" style="background:cyan;"></span>
+                Water Features
+            </label>
+
+            <label class="layer-option">
+                <input type="checkbox" id="mountainToggle" checked>
+                <span class="dot" style="background:green;"></span>
+                Mountain Features
+            </label>
+
+            <label class="layer-option">
+                <input type="checkbox" id="parksToggle" checked>
+                <span class="dot" style="background:orange;"></span>
+                National Parks
+            </label>
+        </div>
+
+        <div class="section">
+            <h3>Selected Location</h3>
+
+            <div class="info-box" id="featureInfo">
+                Click a feature on the map to see its information here.
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Map Legend</h3>
+
+            <div style="font-size:13px; line-height:2;">
+                <div><span class="dot" style="background:blue;"></span> Unique Landscapes</div>
+                <div><span class="dot" style="background:cyan;"></span> Water Features</div>
+                <div><span class="dot" style="background:green;"></span> Mountain Features</div>
+                <div><span class="dot" style="background:orange;"></span> National Parks</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>About This Map</h3>
+
+            <p style="font-size:13px; line-height:1.6;">
+                This interactive map highlights some of Utah's
+                natural attractions and geographic features.
+                It includes four different map layers:
+                unique landscapes, water features, mountain
+                features, and national parks.
+            </p>
+
+            <p style="font-size:13px; line-height:1.6;">
+                Use the checkboxes to turn map layers on and off,
+                search for a location by name, or click a feature
+                to view its information. The goal of this project
+                is to encourage exploration and appreciation of
+                Utah's diverse natural landscapes.
+            </p>
+        </div>
+
+        <div class="section">
+            <h3>AI Note</h3>
+
+            <p style="font-size:13px; line-height:1.6;">
+                I used AI as a tool to help improve the design
+                and organization of my interactive map. Some
+                prompts I used included asking how to make the
+                map look more like my reference example, how to
+                add an About This Map section, and how to include
+                an AI note.
+            </p>
+
+            <p style="font-size:13px; line-height:1.6;">
+                AI also helped me work through the HTML and
+                JavaScript structure. One thing I checked was
+                that the OpenStreetMap attribution was included
+                for the basemap. I reviewed the map layers,
+                search feature, location information, legend,
+                and reset button as part of checking my project.
+            </p>
+        </div>
+
+        <div class="section">
+            <h3>Data Sources</h3>
+
+            <p style="font-size:13px; line-height:1.6;">
+                <strong>Basemap:</strong><br>
+                OpenStreetMap contributors
+            </p>
+
+            <p style="font-size:13px; line-height:1.6;">
+                <strong>National Parks:</strong><br>
+                U.S. Department of Transportation,
+                Bureau of Transportation Statistics
+                (USDOT BTS), ArcGIS Online
+            </p>
+
+            <p style="font-size:13px; line-height:1.6;">
+                Additional geographic data is included
+                in the individual GeoJSON datasets used
+                for the map layers.
+            </p>
+        </div>
+
+    </aside>
+
+    <main class="map-area">
+
+        <div class="map-tools">
+            <span>Interactive Map of Utah</span>
+
+            <button id="resetMap">
+                Reset Map View
+            </button>
+        </div>
+
+        <div id="map"></div>
+
+    </main>
+
+</div>
+
+<footer>
+    Created by Amber Rouse | CCE 114 Geomatics
+    <br>
+    Basemap: OpenStreetMap contributors |
+    Geographic data: See individual dataset sources
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-// ---------------------------------------------------------------
-// HUC8 Watershed Explorer
-// All data paths are RELATIVE, so this runs from any folder:
-// a GitHub Pages repo, a CAEDM www folder, or localhost.
-// ---------------------------------------------------------------
 
-const ESRI_ATTR = 'Tiles &copy; <a href="https://www.esri.com/">Esri</a>';
-const USGS_ATTR = 'Tiles courtesy of the <a href="https://www.usgs.gov/">U.S. Geological Survey</a>';
+    // Initialize map
+    var map = L.map('map').setView([39.5, -111.5], 6);
 
-// `dark` says whether the basemap is dark, which picks the overlay colors.
-// Google is deliberately absent: its tiles need a billing-enabled Maps Tiles
-// API key, which a static page cannot hold without exposing it publicly.
-const BASEMAPS = {
-  positron:  { label: "Positron (light)",   kind: "vector", url: "https://tiles.openfreemap.org/styles/positron", dark: false },
-  bright:    { label: "OSM Bright",         kind: "vector", url: "https://tiles.openfreemap.org/styles/bright",   dark: false },
-  liberty:   { label: "Liberty",            kind: "vector", url: "https://tiles.openfreemap.org/styles/liberty",  dark: false },
-  voyager:   { label: "Carto Voyager",      kind: "vector", url: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",     dark: false },
-  darkmatter:{ label: "Carto Dark Matter",  kind: "vector", url: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json", dark: true  },
-  esriImg:   { label: "Esri Imagery",       kind: "raster", dark: true,  maxzoom: 19, attribution: ESRI_ATTR,
-               tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"] },
-  esriTopo:  { label: "Esri Topographic",   kind: "raster", dark: false, maxzoom: 19, attribution: ESRI_ATTR,
-               tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"] },
-  esriStreet:{ label: "Esri Streets",       kind: "raster", dark: false, maxzoom: 19, attribution: ESRI_ATTR,
-               tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"] },
-  usgsImg:   { label: "USGS Imagery",       kind: "raster", dark: true,  maxzoom: 16, attribution: USGS_ATTR,
-               tiles: ["https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"] },
-  usgsTopo:  { label: "USGS Topo",          kind: "raster", dark: false, maxzoom: 16, attribution: USGS_ATTR,
-               tiles: ["https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}"] },
-  opentopo:  { label: "OpenTopoMap",        kind: "raster", dark: false, maxzoom: 17,
-               attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)',
-               tiles: ["https://a.tile.opentopomap.org/{z}/{x}/{y}.png", "https://b.tile.opentopomap.org/{z}/{x}/{y}.png"] },
-  osm:       { label: "OpenStreetMap",      kind: "raster", dark: false, maxzoom: 19,
-               attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-               tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"] }
-};
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-// Overlay colors, validated for colorblind separation against both surfaces.
-const MARK = {
-  light: { line: "#2a78d6", hover: "#eb6834", sel: "#1baf7a", state: "#52514e", nodata: "#b8b6ae",
-           flood: "#e34948", ring: "#fcfcfb" },
-  dark:  { line: "#3987e5", hover: "#d95926", sel: "#199e70", state: "#e8e6dd", nodata: "#6e6c66",
-           flood: "#e66767", ring: "#1a1a19" }
-};
-// Sequential ramp for basin area: low values sit nearest the surface in each mode.
-const RAMP = {
-  light: ["#cde2fb", "#9ec5f4", "#5598e7", "#2a78d6", "#184f95", "#0d366b"],
-  dark:  ["#184f95", "#256abf", "#3987e5", "#6da7ec", "#9ec5f4", "#cde2fb"]
-};
-// Percentile breaks (km^2) - stops set on the distribution so the few huge
-// basins do not flatten the colors of the other 2,400.
-const AREA_STOPS = [1150, 2316, 3504, 5347, 8283, 11732];
+    // Add scale bar
+    L.control.scale({
+        imperial: true,
+        metric: true
+    }).addTo(map);
 
-const REGIONS = {
-  "01": "New England", "02": "Mid-Atlantic", "03": "South Atlantic-Gulf", "04": "Great Lakes",
-  "05": "Ohio", "06": "Tennessee", "07": "Upper Mississippi", "08": "Lower Mississippi",
-  "09": "Souris-Red-Rainy", "10": "Missouri", "11": "Arkansas-White-Red", "12": "Texas-Gulf",
-  "13": "Rio Grande", "14": "Upper Colorado", "15": "Lower Colorado", "16": "Great Basin",
-  "17": "Pacific Northwest", "18": "California", "19": "Alaska", "20": "Hawaii",
-  "21": "Caribbean", "22": "South Pacific"
-};
+    // Store loaded layers
+    var layers = {};
 
-let basemapKey = "positron";
-let colorMode = "uniform";
-let regionFilter = "";
-let floodMajorOnly = false;
-let hoverId = null, selectedId = null;
-// Set by the style.load event. Do NOT use map.isStyleLoaded() for this:
-// it reports false while the basemap's sources are still loading, long
-// after style.load has fired, so a late-arriving fetch would never draw.
-let styleReady = false;
-let geo = null, states = null, floods = null;   // cached FeatureCollections - fetched ONCE
-let byId = new Map();            // huc8 -> feature, for search and zoom-to
+    var selectedFeatures = [];
 
-const theme = () => MARK[BASEMAPS[basemapKey].dark ? "dark" : "light"];
-const ramp  = () => RAMP[BASEMAPS[basemapKey].dark ? "dark" : "light"];
+    // Display selected feature information
+    function showFeatureInfo(properties) {
 
-function styleFor(key) {
-  const b = BASEMAPS[key];
-  if (b.kind === "vector") return b.url;
-  return {
-    version: 8,
-    sources: { base: { type: "raster", tiles: b.tiles, tileSize: 256,
-                       maxzoom: b.maxzoom, attribution: b.attribution } },
-    layers: [{ id: "base", type: "raster", source: "base" }]
-  };
-}
+        var info = document.getElementById('featureInfo');
 
-const map = new maplibregl.Map({
-  container: "map",
-  style: styleFor(basemapKey),
-  center: [-98.5, 39.5],
-  zoom: 3.4,
-  attributionControl: { compact: true }
-});
-map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
-map.addControl(new maplibregl.ScaleControl(), "bottom-left");
+        if (!properties || Object.keys(properties).length === 0) {
+            info.textContent = 'No additional information available.';
+            return;
+        }
 
-// ---- fill paint -------------------------------------------------
-const fillOn = () => document.getElementById("t-fill").checked;
+        info.innerHTML = Object.entries(properties)
+            .map(([key, value]) =>
+                `<p><strong>${key}:</strong> ${value}</p>`
+            )
+            .join('');
 
-function repaintFill() {
-  if (!map.getLayer("huc8-fill")) return;
-  const p = fillPaint();
-  map.setPaintProperty("huc8-fill", "fill-color", p["fill-color"]);
-  map.setPaintProperty("huc8-fill", "fill-opacity", p["fill-opacity"]);
-}
-
-function fillPaint() {
-  const t = theme();
-  if (colorMode === "area") {
-    const stops = [];
-    AREA_STOPS.forEach((v, i) => stops.push(v, ramp()[i]));
-    return {
-      "fill-color": [
-        "case",
-        ["==", ["get", "areasqkm"], null], t.nodata,
-        ["interpolate", ["linear"], ["get", "areasqkm"], ...stops]
-      ],
-      "fill-opacity": [
-        "case",
-        ["boolean", ["feature-state", "hover"], false], 0.92,
-        fillOn() ? 0.72 : 0
-      ]
-    };
-  }
-  return {
-    "fill-color": [
-      "case",
-      ["boolean", ["feature-state", "selected"], false], t.sel,
-      ["boolean", ["feature-state", "hover"], false], t.hover,
-      t.line
-    ],
-    "fill-opacity": [
-      "case",
-      ["boolean", ["feature-state", "selected"], false], 0.55,
-      ["boolean", ["feature-state", "hover"], false], 0.45,
-      fillOn() ? 0.12 : 0
-    ]
-  };
-}
-
-// ---- layers (re-added after every basemap change) ---------------
-// States and basins draw independently: the states file is tiny and the basin
-// file is ~0.9 MB, so waiting for both would leave the map bare for seconds on
-// a slow connection. Each function is idempotent and safe to call repeatedly.
-
-function addFloodLayer() {
-  if (!floods || !styleReady || map.getLayer("floods-pt")) return;
-  const t = theme();
-  if (!map.getSource("floods")) {
-    map.addSource("floods", { type: "geojson", data: floods, promoteId: "id" });
-  }
-  map.addLayer({
-    id: "floods-pt", type: "circle", source: "floods",
-    paint: {
-      // Severity rides on size, not a second color: the points already own red.
-      "circle-radius": [
-        "interpolate", ["linear"], ["zoom"],
-        3, ["match", ["get", "sev"], "major", 5, "moderate", 3, 2],
-        8, ["match", ["get", "sev"], "major", 11, "moderate", 7, 4.5]
-      ],
-      "circle-color": t.flood,
-      "circle-opacity": 0.82,
-      // A ring in the surface color keeps dense clusters countable.
-      "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 3, 0.4, 8, 1.2],
-      "circle-stroke-color": t.ring,
-      "circle-stroke-opacity": 0.9
     }
-  });
-  applyFloodFilter();
-}
 
-function addStatesLayer() {
-  if (!states || !styleReady || map.getLayer("states-line")) return;
-  if (!map.getSource("states")) {
-    map.addSource("states", { type: "geojson", data: states });
-  }
-  map.addLayer({
-    id: "states-line", type: "line", source: "states",
-    paint: {
-      "line-color": theme().state,
-      "line-width": ["interpolate", ["linear"], ["zoom"], 3, 0.9, 7, 1.8],
-      "line-opacity": 0.75
+    // Load GeoJSON layers
+    function loadLayer(file, name, color, toggleId) {
+
+        fetch(file)
+            .then(response => {
+
+                if (!response.ok) {
+                    throw new Error('Could not find ' + file);
+                }
+
+                return response.json();
+
+            })
+
+            .then(data => {
+
+                var newLayer = L.geoJSON(data, {
+
+                    style: {
+                        color: color,
+                        weight: 2,
+                        fillOpacity: 0.35
+                    },
+
+                    pointToLayer: function(feature, latlng) {
+
+                        return L.circleMarker(latlng, {
+                            radius: 6,
+                            color: color,
+                            fillColor: color,
+                            fillOpacity: 0.85
+                        });
+
+                    },
+
+                    onEachFeature: function(feature, layer) {
+
+                        var properties = feature.properties || {};
+
+                        layer.bindPopup(
+                            Object.entries(properties)
+                                .map(([key, value]) =>
+                                    `<strong>${key}:</strong> ${value}`
+                                )
+                                .join('<br>') || 'No information available.'
+                        );
+
+                        layer.on('click', function() {
+                            showFeatureInfo(properties);
+                        });
+
+                        if (properties && Object.keys(properties).length > 0) {
+                            selectedFeatures.push({
+                                properties: properties,
+                                layer: layer
+                            });
+                        }
+
+                    }
+
+                });
+
+                layers[name] = newLayer;
+
+                newLayer.addTo(map);
+
+                // Connect sidebar checkbox
+                document.getElementById(toggleId).addEventListener(
+                    'change',
+                    function(event) {
+
+                        if (event.target.checked) {
+                            newLayer.addTo(map);
+                        } else {
+                            map.removeLayer(newLayer);
+                        }
+
+                    }
+                );
+
+                console.log(name + ' loaded successfully!');
+
+            })
+
+            .catch(error => {
+                console.error('Error loading ' + name + ':', error);
+                document.getElementById('searchMessage').textContent =
+                    'A layer could not be loaded. Check the browser console.';
+            });
+
     }
-  }, map.getLayer("floods-pt") ? "floods-pt" : undefined);
-}
 
-function addHuc8Layers() {
-  if (!geo || !styleReady || map.getLayer("huc8-fill")) return;
-  const t = theme();
-  if (!map.getSource("huc8")) {
-    map.addSource("huc8", { type: "geojson", data: geo, promoteId: "huc8" });
-  }
-  // Keep basins beneath the state lines and flood points however they arrive.
-  const under = map.getLayer("states-line") ? "states-line"
-              : map.getLayer("floods-pt")  ? "floods-pt" : undefined;
+    // Load all four GeoJSON layers
+    loadLayer(
+        'UniqueLandscapes.geojson',
+        'Unique Landscapes',
+        'blue',
+        'uniqueToggle'
+    );
 
-  map.addLayer({ id: "huc8-fill", type: "fill", source: "huc8", paint: fillPaint() }, under);
-  map.addLayer({
-    id: "huc8-line", type: "line", source: "huc8",
-    paint: {
-      "line-color": [
-        "case",
-        ["boolean", ["feature-state", "selected"], false], t.sel,
-        ["boolean", ["feature-state", "hover"], false], t.hover,
-        t.line
-      ],
-      // A zoom expression must sit at the TOP level of interpolate/step, so the
-      // zoom ramp wraps the feature-state case rather than the other way round.
-      "line-width": [
-        "interpolate", ["linear"], ["zoom"],
-        3, ["case",
-            ["boolean", ["feature-state", "selected"], false], 2.6,
-            ["boolean", ["feature-state", "hover"], false], 2, 0.4],
-        7, ["case",
-            ["boolean", ["feature-state", "selected"], false], 2.6,
-            ["boolean", ["feature-state", "hover"], false], 2, 1]
-      ],
-      "line-opacity": 0.9
+    loadLayer(
+        'WaterFeatures.geojson',
+        'Water Features',
+        'cyan',
+        'waterToggle'
+    );
+
+    loadLayer(
+        'MountainFeatures.geojson',
+        'Mountain Features',
+        'green',
+        'mountainToggle'
+    );
+
+    loadLayer(
+        'NationalParks.geojson',
+        'National Parks',
+        'orange',
+        'parksToggle'
+    );
+
+    // Search loaded feature attributes
+    function searchMap() {
+
+        var query = document.getElementById('search')
+            .value.trim().toLowerCase();
+
+        var message = document.getElementById('searchMessage');
+
+        if (!query) {
+            message.textContent = 'Please enter a search term.';
+            return;
+        }
+
+        var matches = selectedFeatures.filter(item => {
+
+            return Object.values(item.properties)
+                .some(value =>
+                    String(value).toLowerCase().includes(query)
+                );
+
+        });
+
+        if (matches.length > 0) {
+
+            var match = matches[0];
+
+            var bounds = match.layer.getBounds &&
+                match.layer.getBounds().isValid()
+                ? match.layer.getBounds()
+                : null;
+
+            if (bounds) {
+                map.fitBounds(bounds, {maxZoom: 12});
+            } else if (match.layer.getLatLng) {
+                map.setView(match.layer.getLatLng(), 12);
+            }
+
+            match.layer.openPopup();
+
+            showFeatureInfo(match.properties);
+
+            message.textContent =
+                matches.length + ' matching feature(s) found.';
+
+        } else {
+
+            message.textContent =
+                'No matching features found in the loaded data.';
+
+        }
+
     }
-  }, under);
 
-  applyFilter();
-  restoreStates();
-}
+    document.getElementById('searchButton')
+        .addEventListener('click', searchMap);
 
-function addLayers() {
-  addStatesLayer();
-  addHuc8Layers();
-  addFloodLayer();
-  applyToggles();
-  renderLegend();
-}
+    document.getElementById('search')
+        .addEventListener('keydown', function(event) {
 
-function applyFloodFilter() {
-  if (!map.getLayer("floods-pt")) return;
-  map.setFilter("floods-pt", floodMajorOnly ? ["==", ["get", "sev"], "major"] : null);
-}
+            if (event.key === 'Enter') {
+                searchMap();
+            }
 
-// feature-state is cleared with the style, so re-apply what is current.
-function restoreStates() {
-  if (hoverId) map.setFeatureState({ source: "huc8", id: hoverId }, { hover: true });
-  if (selectedId) map.setFeatureState({ source: "huc8", id: selectedId }, { selected: true });
-}
+        });
 
-function applyFilter() {
-  const f = regionFilter ? ["==", ["slice", ["get", "huc8"], 0, 2], regionFilter] : null;
-  ["huc8-fill", "huc8-line"].forEach(id => { if (map.getLayer(id)) map.setFilter(id, f); });
-}
+    // Reset map
+    document.getElementById('resetMap')
+        .addEventListener('click', function() {
 
-function applyToggles() {
-  const on = (id, vis) => { if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis ? "visible" : "none"); };
-  on("huc8-line", document.getElementById("t-huc8").checked);
-  on("states-line", document.getElementById("t-states").checked);
-  on("floods-pt", document.getElementById("t-floods").checked);
-  repaintFill();   // the fill stays visible (and hoverable) but goes transparent
-}
+            map.setView([39.5, -111.5], 6);
 
-// ---- basin readout ----------------------------------------------
-const nf = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+            document.getElementById('featureInfo').textContent =
+                'Click a feature on the map to see its information here.';
 
-function showBasin(props, pinned) {
-  const body = document.getElementById("basin-body");
-  if (!props) {
-    body.innerHTML = '<div class="placeholder">Hover a watershed on the map to see its details. Click to pin it.</div>';
-    return;
-  }
-  const km = props.areasqkm;
-  const area = (km == null)
-    ? '<span class="placeholder">not reported (transboundary)</span>'
-    : `${nf.format(km)} km&sup2; &middot; ${nf.format(km * 0.386102)} mi&sup2;`;
-  const reg = REGIONS[String(props.huc8).slice(0, 2)] || "—";
-  body.innerHTML = `
-    <div class="name">${esc(props.name)}</div>
-    <dl>
-      <dt>HUC8</dt><dd>${esc(props.huc8)}</dd>
-      <dt>Area</dt><dd>${area}</dd>
-      <dt>States</dt><dd>${esc(props.states || "—")}</dd>
-      <dt>Region</dt><dd>${esc(reg)}</dd>
-    </dl>
-    ${pinned ? '<span class="pinned">Pinned &mdash; click the map to clear</span>' : ""}`;
-}
+        });
 
-function fmtMoney(v) {
-  if (!v) return "none reported";
-  if (v >= 1e9) return `$${(v / 1e9).toFixed(2)} billion`;
-  if (v >= 1e6) return `$${(v / 1e6).toFixed(1)} million`;
-  if (v >= 1e3) return `$${nf.format(Math.round(v / 1e3))},000`;
-  return `$${nf.format(v)}`;
-}
-
-// "14-JUN-26 18:30:00" -> "14 Jun 2026, 18:30"
-function fmtWhen(s) {
-  const m = /^(\d{2})-([A-Z]{3})-(\d{2}) (\d{2}):(\d{2})/.exec(s || "");
-  if (!m) return s || "\u2014";
-  const mon = m[2][0] + m[2].slice(1).toLowerCase();
-  return `${+m[1]} ${mon} 20${m[3]}, ${m[4]}:${m[5]}`;
-}
-
-function showFlood(p) {
-  const el = document.getElementById("flood-body");
-  if (!p) {
-    el.innerHTML = '<div class="placeholder">Click a red flood point for its full report.</div>';
-    return;
-  }
-  const where = [p.near, p.cz ? p.cz + " Co." : "", p.st].filter(Boolean).join(", ");
-  const rows = [
-    ["Type", esc(p.type)],
-    ["Began", `${esc(fmtWhen(p.beg))}${p.tz ? " " + esc(p.tz) : ""}`],
-    ["Ended", esc(fmtWhen(p.end))],
-    ["Where", esc(where)],
-    ["Deaths", p.d ? `<strong>${p.d}</strong>` : "0"],
-    ["Injuries", p.i ? `<strong>${p.i}</strong>` : "0"],
-    ["Damage", esc(fmtMoney(+p.dmg))],
-  ];
-  if (p.cause) rows.push(["Cause", esc(p.cause)]);
-  if (p.src)   rows.push(["Reported by", esc(p.src)]);
-
-  el.innerHTML = `
-    <div class="name">${esc(p.type)} \u2014 ${esc(p.st)}</div>
-    ${p.sev === "major" ? '<span class="pinned">Major event</span>' : ""}
-    <dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
-    ${p.note ? `<p class="narr"><strong>What happened.</strong> ${esc(p.note)}</p>` : ""}
-    ${p.epi  ? `<p class="narr"><strong>Weather episode.</strong> ${esc(p.epi)}</p>` : ""}
-    <p class="src">NOAA Storm Events #${esc(p.id)}</p>`;
-}
-
-function esc(s) {
-  return String(s ?? "").replace(/[&<>"']/g, c =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
-
-// ---- legend ------------------------------------------------------
-function renderLegend() {
-  const t = theme(), el = document.getElementById("legend-body");
-  if (colorMode === "area") {
-    el.innerHTML = `
-      <div>Basin area</div>
-      <div class="ramp" style="background:linear-gradient(90deg, ${ramp().join(",")})"></div>
-      <div class="ramp-ends"><span>${nf.format(AREA_STOPS[0])} km&sup2;</span>
-        <span>${nf.format(AREA_STOPS[AREA_STOPS.length - 1])}+ km&sup2;</span></div>
-      <div class="legend-item" style="margin-top:8px">
-        <span class="sw" style="background:${t.nodata}"></span>Area not reported</div>
-      <div class="legend-item"><span class="sw" style="background:${t.state}"></span>State boundary</div>
-      ${floodLegend(t)}`;
-  } else {
-    el.innerHTML = `
-      <div class="legend-item"><span class="sw" style="background:${t.line}"></span>HUC8 subbasin</div>
-      <div class="legend-item"><span class="sw" style="background:${t.hover}"></span>Hovered</div>
-      <div class="legend-item"><span class="sw" style="background:${t.sel}"></span>Pinned</div>
-      <div class="legend-item"><span class="sw" style="background:${t.state}"></span>State boundary</div>
-      ${floodLegend(t)}`;
-  }
-}
-
-function floodLegend(t) {
-  const dot = (px) => `<span class="dot" style="width:${px}px;height:${px}px;background:${t.flood}"></span>`;
-  return `
-    <div style="margin-top:10px">Flood events, Jan\u2013Jul 2026</div>
-    <div class="legend-item">${dot(13)}Major (death, injury or \u2265 $100k)</div>
-    <div class="legend-item">${dot(9)}Moderate (\u2265 $10k damage)</div>
-    <div class="legend-item">${dot(6)}Other reported flood</div>`;
-}
-
-// ---- interaction -------------------------------------------------
-map.on("mousemove", "huc8-fill", (e) => {
-  const f = e.features && e.features[0];
-  if (!f) return;
-  if (hoverId !== null && hoverId !== f.id) {
-    map.setFeatureState({ source: "huc8", id: hoverId }, { hover: false });
-  }
-  hoverId = f.id;
-  map.setFeatureState({ source: "huc8", id: hoverId }, { hover: true });
-  map.getCanvas().style.cursor = "pointer";
-  showBasin(f.properties, false);
-});
-
-map.on("mouseleave", "huc8-fill", () => {
-  if (hoverId !== null) map.setFeatureState({ source: "huc8", id: hoverId }, { hover: false });
-  hoverId = null;
-  map.getCanvas().style.cursor = "";
-  const sel = selectedId && byId.get(selectedId);
-  showBasin(sel ? sel.properties : null, !!sel);
-});
-
-map.on("click", (e) => {
-  // Flood points are small, so accept a click within a few pixels of one and
-  // let them take priority over the basin underneath.
-  if (map.getLayer("floods-pt") &&
-      map.getLayoutProperty("floods-pt", "visibility") !== "none") {
-    const pad = 7;
-    const near = map.queryRenderedFeatures(
-      [[e.point.x - pad, e.point.y - pad], [e.point.x + pad, e.point.y + pad]],
-      { layers: ["floods-pt"] });
-    if (near.length) { showFlood(near[0].properties); return; }
-  }
-  if (!map.getLayer("huc8-fill")) return;   // basins may still be loading
-  const hits = map.queryRenderedFeatures(e.point, { layers: ["huc8-fill"] });
-  select(hits.length ? hits[0].id : null);
-});
-
-map.on("mouseenter", "floods-pt", () => { map.getCanvas().style.cursor = "pointer"; });
-map.on("mouseleave", "floods-pt", () => { map.getCanvas().style.cursor = ""; });
-
-function select(id) {
-  if (selectedId) map.setFeatureState({ source: "huc8", id: selectedId }, { selected: false });
-  selectedId = id;
-  if (id) {
-    map.setFeatureState({ source: "huc8", id }, { selected: true });
-    const f = byId.get(id);
-    if (f) showBasin(f.properties, true);
-  } else {
-    showBasin(null);
-  }
-}
-
-// ---- bounds helpers ----------------------------------------------
-function bboxOf(geom) {
-  let x1 = 180, y1 = 90, x2 = -180, y2 = -90;
-  const walk = (c) => {
-    if (typeof c[0] === "number") {
-      if (c[0] < x1) x1 = c[0]; if (c[0] > x2) x2 = c[0];
-      if (c[1] < y1) y1 = c[1]; if (c[1] > y2) y2 = c[1];
-    } else c.forEach(walk);
-  };
-  walk(geom.coordinates);
-  return [[x1, y1], [x2, y2]];
-}
-
-function zoomTo(features) {
-  if (!features.length) return;
-  let b = null;
-  for (const f of features) {
-    if (!f.geometry) continue;
-    const [[x1, y1], [x2, y2]] = bboxOf(f.geometry);
-    b = b ? [[Math.min(b[0][0], x1), Math.min(b[0][1], y1)],
-             [Math.max(b[1][0], x2), Math.max(b[1][1], y2)]]
-          : [[x1, y1], [x2, y2]];
-  }
-  if (b) map.fitBounds(b, { padding: 48, duration: 900, maxZoom: 10 });
-}
-
-// ---- controls -----------------------------------------------------
-const bmSel = document.getElementById("basemap");
-for (const [k, b] of Object.entries(BASEMAPS)) {
-  bmSel.appendChild(Object.assign(document.createElement("option"), { value: k, textContent: b.label }));
-}
-bmSel.value = basemapKey;
-bmSel.addEventListener("change", () => {
-  basemapKey = bmSel.value;
-  styleReady = false;                   // until the new style reports in
-  map.setStyle(styleFor(basemapKey));   // style.load re-runs addLayers()
-});
-
-const regSel = document.getElementById("region");
-regSel.appendChild(Object.assign(document.createElement("option"), { value: "", textContent: "All regions" }));
-for (const [code, name] of Object.entries(REGIONS)) {
-  regSel.appendChild(Object.assign(document.createElement("option"),
-    { value: code, textContent: `${code} — ${name}` }));
-}
-regSel.addEventListener("change", () => {
-  regionFilter = regSel.value;
-  applyFilter();
-  if (regionFilter && geo) {
-    zoomTo(geo.features.filter(f => String(f.properties.huc8).startsWith(regionFilter)));
-  }
-});
-
-document.querySelectorAll("#colormode button").forEach(btn => {
-  btn.addEventListener("click", () => {
-    colorMode = btn.dataset.mode;
-    document.querySelectorAll("#colormode button").forEach(b =>
-      b.setAttribute("aria-pressed", String(b === btn)));
-    repaintFill();
-    renderLegend();
-  });
-});
-
-document.querySelectorAll("#floodsev button").forEach(btn => {
-  btn.addEventListener("click", () => {
-    floodMajorOnly = btn.dataset.sev === "major";
-    document.querySelectorAll("#floodsev button").forEach(b =>
-      b.setAttribute("aria-pressed", String(b === btn)));
-    applyFloodFilter();
-  });
-});
-
-["t-huc8", "t-fill", "t-states", "t-floods"].forEach(id =>
-  document.getElementById(id).addEventListener("change", applyToggles));
-
-// Search by name or HUC8 code
-const searchEl = document.getElementById("search");
-const resultsEl = document.getElementById("results");
-searchEl.addEventListener("input", () => {
-  const q = searchEl.value.trim().toLowerCase();
-  resultsEl.innerHTML = "";
-  if (q.length < 2 || !geo) return;
-  const hits = [];
-  for (const f of geo.features) {
-    const p = f.properties;
-    if (String(p.huc8).startsWith(q) || String(p.name).toLowerCase().includes(q)) {
-      hits.push(f);
-      if (hits.length === 8) break;
-    }
-  }
-  for (const f of hits) {
-    const li = document.createElement("li");
-    li.innerHTML = `${esc(f.properties.name)} <span class="code">${esc(f.properties.huc8)}</span>`;
-    li.addEventListener("click", () => {
-      select(f.properties.huc8);
-      zoomTo([f]);
-      resultsEl.innerHTML = "";
-      searchEl.value = "";
-    });
-    resultsEl.appendChild(li);
-  }
-});
-
-// Flat <-> globe toggle
-let globe = false;
-document.getElementById("proj").addEventListener("click", (e) => {
-  globe = !globe;
-  map.setProjection({ type: globe ? "globe" : "mercator" });
-  e.target.textContent = globe ? "Switch to flat map" : "Switch to globe";
-});
-
-// ---- load data once, then draw ------------------------------------
-// The fetches live OUTSIDE the style handler on purpose: style.load fires again
-// on every basemap change, so fetching in there would re-download the files.
-const loadingEl = () => document.getElementById("loading");
-
-function setLoading(msg) {
-  const el = loadingEl();
-  if (el) el.textContent = msg;
-}
-
-// Streams the response so the byte count can be reported. Content-Length is the
-// COMPRESSED size while the reader yields decompressed bytes, so show megabytes
-// read rather than a percentage that would sail past 100%.
-async function getJSON(url, label) {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
-  if (!r.body) return r.json();
-  const reader = r.body.getReader();
-  const chunks = [];
-  let got = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    got += value.length;
-    if (label) setLoading(`Loading ${label}\u2026 ${(got / 1048576).toFixed(1)} MB`);
-  }
-  const buf = new Uint8Array(got);
-  let off = 0;
-  for (const c of chunks) { buf.set(c, off); off += c.length; }
-  return JSON.parse(new TextDecoder().decode(buf));
-}
-
-const fail = (err) => setLoading(`Could not load data: ${err.message}`);
-
-// States are small - draw them immediately so the map is useful at once.
-getJSON("data/states.geojson")
-  .then(s => { states = s; addStatesLayer(); applyToggles(); })
-  .catch(fail);
-
-// Flood points are small and the headline layer - load them early.
-getJSON("data/floods.geojson")
-  .then(fc => { floods = fc; addFloodLayer(); applyToggles(); })
-  .catch(fail);
-
-getJSON("data/huc8.geojson", "watershed boundaries")
-  .then(h => {
-    geo = h;
-    for (const f of h.features) byId.set(f.properties.huc8, f);
-    const el = loadingEl();
-    if (el) el.remove();
-    addHuc8Layers();
-    applyToggles();
-  })
-  .catch(fail);
-
-map.on("style.load", () => { styleReady = true; addLayers(); });
-renderLegend();
 </script>
+
 </body>
 </html>
