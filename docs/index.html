@@ -349,26 +349,22 @@
         </div>
 
         <div class="section">
-            <h3>AI Note</h3>
+            <h3>AI Statement</h3>
 
             <p style="font-size:13px; line-height:1.6;">
-                I used AI as a tool to help improve the design
-                and organization of my interactive map.
-                Some prompts I used included asking how to
-                make the map look more like my reference
-                example, how to improve the About This Map
-                section, and how to include an AI note.
+                I used ChatGPT to improve the design, organization, and code for my USA Natural Hidden Gems map. The main technologies are HTML, CSS, and JavaScript, along with the Leaflet mapping library. The map uses OpenStreetMap for its basemap and GeoJSON files for its geographic layers.
             </p>
 
             <p style="font-size:13px; line-height:1.6;">
-                AI also helped me work through the HTML and
-                JavaScript structure and make improvements
-                to the overall appearance of the project.
-                One thing I checked was that OpenStreetMap
-                attribution was included for the basemap.
-                I reviewed the map layers, search feature,
-                location information, legend, and reset
-                button as part of checking my project.
+                Three helpful prompts were: “Help me make the map look more like my reference example,” “Add an About This Map section that explains the project,” and “Update the code so the map is titled USA Natural Hidden Gems and includes a clear legend.” These prompts helped improve the map's appearance, organization, and usability.
+            </p>
+
+            <p style="font-size:13px; line-height:1.6;">
+                One problem I encountered was that an earlier code update caused the USA state outline layer to disappear. I noticed the missing outlines when I checked the map after the update. I explained the problem and had the code revised so the state boundary layer would load and display again. I then checked the map to make sure the outlines were visible.
+            </p>
+
+            <p style="font-size:13px; line-height:1.6;">
+                I personally reviewed the finished website instead of assuming the AI-generated code was correct. I tested the layer checkboxes, searched for locations, clicked map features to view their information, checked that the legend colors matched the layers, and used the reset button. I also checked that the map title, About This Map section, AI statement, and OpenStreetMap attribution appeared. AI helped me with coding and design, but I reviewed the final result and tested the main features before submitting the project and that each section was clear and readable for visitors.
             </p>
         </div>
 
@@ -636,10 +632,10 @@
 
     }
 
-    // Load state boundaries from docs/data
+    // Load state boundaries
     loadStateBoundaries();
 
-    // Load all four natural feature layers from docs
+    // Load all four natural feature layers
     loadLayer(
         'UniqueLandscapes.geojson',
         'Unique Landscapes',
