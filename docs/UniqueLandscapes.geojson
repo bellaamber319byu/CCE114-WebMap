@@ -1,0 +1,17 @@
+{
+"type": "FeatureCollection",
+"name": "UniqueLandscapes",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{"type":"Feature","properties":{"Name":"Bonneville Salt Flats","State":"Utah","X (Longitude)":-113.8278,"Y (Latitude)":40.7953},"geometry":{"type":"Point","coordinates":[-113.8278,40.7953]}},
+{"type":"Feature","properties":{"Name":"Painted Hills","State":"Oregon","X (Longitude)":-120.2744,"Y (Latitude)":44.6535},"geometry":{"type":"Point","coordinates":[-120.2744,44.6535]}},
+{"type":"Feature","properties":{"Name":"White Sands","State":"New Mexico","X (Longitude)":-106.1719,"Y (Latitude)":32.7792},"geometry":{"type":"Point","coordinates":[-106.1719,32.7792]}},
+{"type":"Feature","properties":{"Name":"Goblin Valley","State":"Utah","X (Longitude)":-110.7063,"Y (Latitude)":38.569},"geometry":{"type":"Point","coordinates":[-110.7063,38.569]}},
+{"type":"Feature","properties":{"Name":"Badlands National Park","State":"South Dakota","X (Longitude)":-101.9414,"Y (Latitude)":43.7436},"geometry":{"type":"Point","coordinates":[-101.9414,43.7436]}},
+{"type":"Feature","properties":{"Name":"Valley of Fire","State":"Nevada","X (Longitude)":-114.515,"Y (Latitude)":36.4297},"geometry":{"type":"Point","coordinates":[-114.515,36.4297]}},
+{"type":"Feature","properties":{"Name":"Bisti Badlands","State":"New Mexico","X (Longitude)":-108.252,"Y (Latitude)":36.266},"geometry":{"type":"Point","coordinates":[-108.252,36.266]}},
+{"type":"Feature","properties":{"Name":"Thor's Well","State":"Oregon","X (Longitude)":-124.113,"Y (Latitude)":44.2795},"geometry":{"type":"Point","coordinates":[-124.113,44.2795]}},
+{"type":"Feature","properties":{"Name":"Great Sand Dunes","State":"Colorado","X (Longitude)":-105.512,"Y (Latitude)":37.7325},"geometry":{"type":"Point","coordinates":[-105.512,37.7325]}},
+{"type":"Feature","properties":{"Name":"Racetrack Playa","State":"California","X (Longitude)":-117.562,"Y (Latitude)":36.681},"geometry":{"type":"Point","coordinates":[-117.562,36.681]}}
+]
+}
