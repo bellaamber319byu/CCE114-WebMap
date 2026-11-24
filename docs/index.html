@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Utah Natural Hidden Gems</title>
+
+    <title>USA Natural Hidden Gems</title>
 
     <link rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -219,8 +220,8 @@
 
 <header>
     <div>
-        <h1>UTAH NATURAL HIDDEN GEMS</h1>
-        <p>An Interactive Guide to Utah's Natural Beauty</p>
+        <h1>USA NATURAL HIDDEN GEMS</h1>
+        <p>An Interactive Guide to America's Natural Beauty</p>
     </div>
 
     <div class="header-tag">CCE 114 · GEOMATICS</div>
@@ -230,26 +231,31 @@
 
     <aside class="sidebar">
 
-        <h2>Explore Utah</h2>
+        <h2>Explore America</h2>
 
         <p class="description">
-            Discover the natural wonders of Utah.
-            Explore unique landscapes, beautiful water features,
-            mountain destinations, and national parks.
-            Select a layer or click a location on the map
-            to learn more.
+            Discover the natural beauty found throughout
+            the United States. Explore unique landscapes,
+            beautiful water features, mountain destinations,
+            and national parks. From scenic natural wonders
+            to lesser-known destinations, this map highlights
+            some of the country's most interesting geographic
+            features.
         </p>
 
         <div class="section">
             <h3>Find a Hidden Gem</h3>
+
             <input
                 type="text"
                 id="search"
                 placeholder="Search by location name..."
             >
+
             <button id="searchButton" style="width:100%; margin-top:8px;">
                 Search Map
             </button>
+
             <p id="searchMessage" style="font-size:12px;"></p>
         </div>
 
@@ -293,10 +299,25 @@
             <h3>Map Legend</h3>
 
             <div style="font-size:13px; line-height:2;">
-                <div><span class="dot" style="background:blue;"></span> Unique Landscapes</div>
-                <div><span class="dot" style="background:cyan;"></span> Water Features</div>
-                <div><span class="dot" style="background:green;"></span> Mountain Features</div>
-                <div><span class="dot" style="background:orange;"></span> National Parks</div>
+                <div>
+                    <span class="dot" style="background:blue;"></span>
+                    Unique Landscapes
+                </div>
+
+                <div>
+                    <span class="dot" style="background:cyan;"></span>
+                    Water Features
+                </div>
+
+                <div>
+                    <span class="dot" style="background:green;"></span>
+                    Mountain Features
+                </div>
+
+                <div>
+                    <span class="dot" style="background:orange;"></span>
+                    National Parks
+                </div>
             </div>
         </div>
 
@@ -304,19 +325,27 @@
             <h3>About This Map</h3>
 
             <p style="font-size:13px; line-height:1.6;">
-                This interactive map highlights some of Utah's
-                natural attractions and geographic features.
-                It includes four different map layers:
-                unique landscapes, water features, mountain
-                features, and national parks.
+                USA Natural Hidden Gems is an interactive
+                map designed to highlight the geographic
+                diversity and natural attractions found
+                throughout the United States.
             </p>
 
             <p style="font-size:13px; line-height:1.6;">
-                Use the checkboxes to turn map layers on and off,
-                search for a location by name, or click a feature
-                to view its information. The goal of this project
-                is to encourage exploration and appreciation of
-                Utah's diverse natural landscapes.
+                The map includes four geographic data layers:
+                unique landscapes, water features, mountain
+                features, and national parks. Each layer
+                represents a different part of America's
+                natural environment.
+            </p>
+
+            <p style="font-size:13px; line-height:1.6;">
+                Users can turn layers on and off, search
+                for locations, zoom in on geographic features,
+                and select individual features to explore
+                their available information. The purpose
+                of this project is to make exploring America's
+                natural beauty easier and more interactive.
             </p>
         </div>
 
@@ -325,20 +354,22 @@
 
             <p style="font-size:13px; line-height:1.6;">
                 I used AI as a tool to help improve the design
-                and organization of my interactive map. Some
-                prompts I used included asking how to make the
-                map look more like my reference example, how to
-                add an About This Map section, and how to include
-                an AI note.
+                and organization of my interactive map.
+                Some prompts I used included asking how to
+                make the map look more like my reference
+                example, how to improve the About This Map
+                section, and how to include an AI note.
             </p>
 
             <p style="font-size:13px; line-height:1.6;">
                 AI also helped me work through the HTML and
-                JavaScript structure. One thing I checked was
-                that the OpenStreetMap attribution was included
-                for the basemap. I reviewed the map layers,
-                search feature, location information, legend,
-                and reset button as part of checking my project.
+                JavaScript structure and make improvements
+                to the overall appearance of the project.
+                One thing I checked was that OpenStreetMap
+                attribution was included for the basemap.
+                I reviewed the map layers, search feature,
+                location information, legend, and reset
+                button as part of checking my project.
             </p>
         </div>
 
@@ -358,10 +389,12 @@
             </p>
 
             <p style="font-size:13px; line-height:1.6;">
-                Additional geographic data is included
-                in the individual GeoJSON datasets used
-                for the map layers.
+                <strong>Additional Geographic Data:</strong><br>
+                See the individual GeoJSON datasets
+                used for unique landscapes, water features,
+                and mountain features.
             </p>
+
         </div>
 
     </aside>
@@ -369,7 +402,7 @@
     <main class="map-area">
 
         <div class="map-tools">
-            <span>Interactive Map of Utah</span>
+            <span>Interactive Map of the United States</span>
 
             <button id="resetMap">
                 Reset Map View
@@ -393,9 +426,10 @@
 
 <script>
 
-    // Initialize map
-    var map = L.map('map').setView([39.5, -111.5], 6);
+    // Initialize map centered on the United States
+    var map = L.map('map').setView([39.5, -98.35], 3.5);
 
+    // Add OpenStreetMap basemap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
@@ -406,7 +440,7 @@
         metric: true
     }).addTo(map);
 
-    // Store loaded layers
+    // Store loaded map layers
     var layers = {};
 
     var selectedFeatures = [];
@@ -429,7 +463,7 @@
 
     }
 
-    // Load GeoJSON layers
+    // Load GeoJSON map layers
     function loadLayer(file, name, color, toggleId) {
 
         fetch(file)
@@ -480,11 +514,13 @@
                             showFeatureInfo(properties);
                         });
 
-                        if (properties && Object.keys(properties).length > 0) {
+                        if (Object.keys(properties).length > 0) {
+
                             selectedFeatures.push({
                                 properties: properties,
                                 layer: layer
                             });
+
                         }
 
                     }
@@ -493,35 +529,40 @@
 
                 layers[name] = newLayer;
 
-                newLayer.addTo(map);
+                // Add layer if its checkbox is selected
+                var toggle = document.getElementById(toggleId);
+
+                if (toggle.checked) {
+                    newLayer.addTo(map);
+                }
 
                 // Connect sidebar checkbox
-                document.getElementById(toggleId).addEventListener(
-                    'change',
-                    function(event) {
+                toggle.addEventListener('change', function(event) {
 
-                        if (event.target.checked) {
-                            newLayer.addTo(map);
-                        } else {
-                            map.removeLayer(newLayer);
-                        }
-
+                    if (event.target.checked) {
+                        newLayer.addTo(map);
+                    } else {
+                        map.removeLayer(newLayer);
                     }
-                );
+
+                });
 
                 console.log(name + ' loaded successfully!');
 
             })
 
             .catch(error => {
+
                 console.error('Error loading ' + name + ':', error);
+
                 document.getElementById('searchMessage').textContent =
-                    'A layer could not be loaded. Check the browser console.';
+                    name + ' could not be loaded. Check the file location.';
+
             });
 
     }
 
-    // Load all four GeoJSON layers
+    // Load all four GeoJSON layers from the docs folder
     loadLayer(
         'UniqueLandscapes.geojson',
         'Unique Landscapes',
@@ -550,7 +591,7 @@
         'parksToggle'
     );
 
-    // Search loaded feature attributes
+    // Search loaded map features
     function searchMap() {
 
         var query = document.getElementById('search')
@@ -581,11 +622,24 @@
                 ? match.layer.getBounds()
                 : null;
 
-            if (bounds) {
-                map.fitBounds(bounds, {maxZoom: 12});
-            } else if (match.layer.getLatLng) {
+            if (match.layer.getLatLng) {
+
                 map.setView(match.layer.getLatLng(), 12);
+
+            } else if (bounds) {
+
+                map.fitBounds(bounds, {maxZoom: 12});
+
             }
+
+            // Turn on the matching layer if it is hidden
+            Object.entries(layers).forEach(([name, layer]) => {
+
+                if (layer.hasLayer(match.layer) && !map.hasLayer(layer)) {
+                    layer.addTo(map);
+                }
+
+            });
 
             match.layer.openPopup();
 
@@ -615,14 +669,18 @@
 
         });
 
-    // Reset map
+    // Reset map to the United States
     document.getElementById('resetMap')
         .addEventListener('click', function() {
 
-            map.setView([39.5, -111.5], 6);
+            map.setView([39.5, -98.35], 3.5);
 
             document.getElementById('featureInfo').textContent =
                 'Click a feature on the map to see its information here.';
+
+            document.getElementById('searchMessage').textContent = '';
+
+            document.getElementById('search').value = '';
 
         });
 
@@ -630,4 +688,3 @@
 
 </body>
 </html>
-
