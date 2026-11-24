@@ -172,20 +172,6 @@
             background: #41664c;
         }
 
-        .legend {
-            background: white;
-            padding: 11px 14px;
-            border-radius: 7px;
-            box-shadow: 0 1px 7px rgba(0,0,0,.25);
-            font-size: 12px;
-            line-height: 1.8;
-        }
-
-        .legend strong {
-            display: block;
-            margin-bottom: 5px;
-        }
-
         footer {
             background: #294b38;
             color: white;
@@ -239,7 +225,7 @@
             beautiful water features, mountain destinations,
             and national parks. From scenic natural wonders
             to lesser-known destinations, this map highlights
-            some of the country's most interesting geographic
+            some of the country's interesting geographic
             features.
         </p>
 
@@ -261,6 +247,12 @@
 
         <div class="section">
             <h3>Map Layers</h3>
+
+            <label class="layer-option">
+                <input type="checkbox" id="statesToggle" checked>
+                <span class="dot" style="background:#536b58;"></span>
+                USA State Boundaries
+            </label>
 
             <label class="layer-option">
                 <input type="checkbox" id="uniqueToggle" checked>
@@ -299,6 +291,12 @@
             <h3>Map Legend</h3>
 
             <div style="font-size:13px; line-height:2;">
+
+                <div>
+                    <span class="dot" style="background:#536b58;"></span>
+                    USA State Boundaries
+                </div>
+
                 <div>
                     <span class="dot" style="background:blue;"></span>
                     Unique Landscapes
@@ -318,6 +316,7 @@
                     <span class="dot" style="background:orange;"></span>
                     National Parks
                 </div>
+
             </div>
         </div>
 
@@ -332,11 +331,11 @@
             </p>
 
             <p style="font-size:13px; line-height:1.6;">
-                The map includes four geographic data layers:
+                The map includes four natural feature datasets:
                 unique landscapes, water features, mountain
-                features, and national parks. Each layer
-                represents a different part of America's
-                natural environment.
+                features, and national parks. It also includes
+                state boundaries to help users understand
+                where each feature is located.
             </p>
 
             <p style="font-size:13px; line-height:1.6;">
@@ -344,8 +343,8 @@
                 for locations, zoom in on geographic features,
                 and select individual features to explore
                 their available information. The purpose
-                of this project is to make exploring America's
-                natural beauty easier and more interactive.
+                of this project is to encourage exploration
+                and appreciation of America's natural beauty.
             </p>
         </div>
 
@@ -382,6 +381,11 @@
             </p>
 
             <p style="font-size:13px; line-height:1.6;">
+                <strong>State Boundaries:</strong><br>
+                Existing states.geojson dataset
+            </p>
+
+            <p style="font-size:13px; line-height:1.6;">
                 <strong>National Parks:</strong><br>
                 U.S. Department of Transportation,
                 Bureau of Transportation Statistics
@@ -394,7 +398,6 @@
                 used for unique landscapes, water features,
                 and mountain features.
             </p>
-
         </div>
 
     </aside>
@@ -427,7 +430,7 @@
 <script>
 
     // Initialize map centered on the United States
-    var map = L.map('map').setView([39.5, -98.35], 3.5);
+    var map = L.map('map').setView([39.5, -98.35], 4);
 
     // Add OpenStreetMap basemap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -440,7 +443,13 @@
         metric: true
     }).addTo(map);
 
-    // Store loaded map layers
+    // Create a pane for state boundaries.
+    // This keeps the outlines visible above the natural feature layers.
+    map.createPane('stateOutlinePane');
+    map.getPane('stateOutlinePane').style.zIndex = 450;
+    map.getPane('stateOutlinePane').style.pointerEvents = 'none';
+
+    // Store loaded layers
     var layers = {};
 
     var selectedFeatures = [];
@@ -463,10 +472,75 @@
 
     }
 
-    // Load GeoJSON map layers
+    // Load USA state boundaries
+    function loadStateBoundaries() {
+
+        fetch('data/states.geojson')
+
+            .then(response => {
+
+                if (!response.ok) {
+                    throw new Error('Could not find data/states.geojson');
+                }
+
+                return response.json();
+
+            })
+
+            .then(data => {
+
+                var stateLayer = L.geoJSON(data, {
+
+                    pane: 'stateOutlinePane',
+
+                    style: {
+                        color: '#536b58',
+                        weight: 1.5,
+                        opacity: 0.9,
+                        fillOpacity: 0
+                    },
+
+                    interactive: false
+
+                });
+
+                layers['State Boundaries'] = stateLayer;
+
+                if (document.getElementById('statesToggle').checked) {
+                    stateLayer.addTo(map);
+                }
+
+                document.getElementById('statesToggle')
+                    .addEventListener('change', function(event) {
+
+                        if (event.target.checked) {
+                            stateLayer.addTo(map);
+                        } else {
+                            map.removeLayer(stateLayer);
+                        }
+
+                    });
+
+                console.log('USA state boundaries loaded successfully!');
+
+            })
+
+            .catch(error => {
+
+                console.error('Error loading state boundaries:', error);
+
+                document.getElementById('searchMessage').textContent =
+                    'State boundaries could not be loaded. Check data/states.geojson.';
+
+            });
+
+    }
+
+    // Load natural feature GeoJSON layers
     function loadLayer(file, name, color, toggleId) {
 
         fetch(file)
+
             .then(response => {
 
                 if (!response.ok) {
@@ -518,7 +592,8 @@
 
                             selectedFeatures.push({
                                 properties: properties,
-                                layer: layer
+                                layer: layer,
+                                layerName: name
                             });
 
                         }
@@ -529,7 +604,6 @@
 
                 layers[name] = newLayer;
 
-                // Add layer if its checkbox is selected
                 var toggle = document.getElementById(toggleId);
 
                 if (toggle.checked) {
@@ -562,7 +636,10 @@
 
     }
 
-    // Load all four GeoJSON layers from the docs folder
+    // Load state boundaries from docs/data
+    loadStateBoundaries();
+
+    // Load all four natural feature layers from docs
     loadLayer(
         'UniqueLandscapes.geojson',
         'Unique Landscapes',
@@ -617,6 +694,26 @@
 
             var match = matches[0];
 
+            // Turn on the layer containing the matching feature
+            var matchingLayer = layers[match.layerName];
+
+            if (matchingLayer && !map.hasLayer(matchingLayer)) {
+
+                matchingLayer.addTo(map);
+
+                var toggleIds = {
+                    'Unique Landscapes': 'uniqueToggle',
+                    'Water Features': 'waterToggle',
+                    'Mountain Features': 'mountainToggle',
+                    'National Parks': 'parksToggle'
+                };
+
+                document.getElementById(
+                    toggleIds[match.layerName]
+                ).checked = true;
+
+            }
+
             var bounds = match.layer.getBounds &&
                 match.layer.getBounds().isValid()
                 ? match.layer.getBounds()
@@ -631,15 +728,6 @@
                 map.fitBounds(bounds, {maxZoom: 12});
 
             }
-
-            // Turn on the matching layer if it is hidden
-            Object.entries(layers).forEach(([name, layer]) => {
-
-                if (layer.hasLayer(match.layer) && !map.hasLayer(layer)) {
-                    layer.addTo(map);
-                }
-
-            });
 
             match.layer.openPopup();
 
@@ -673,7 +761,7 @@
     document.getElementById('resetMap')
         .addEventListener('click', function() {
 
-            map.setView([39.5, -98.35], 3.5);
+            map.setView([39.5, -98.35], 4);
 
             document.getElementById('featureInfo').textContent =
                 'Click a feature on the map to see its information here.';
