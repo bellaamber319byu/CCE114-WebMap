@@ -1,0 +1,631 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>USA Natural Hidden Gems</title>
+
+    <link rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f3f1e9;
+            color: #304536;
+        }
+
+        header {
+            background: #294b38;
+            color: white;
+            padding: 18px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 25px;
+            letter-spacing: 1px;
+        }
+
+        header p {
+            margin: 5px 0 0;
+            color: #d9e4d8;
+            font-size: 13px;
+        }
+
+        .header-tag {
+            font-size: 12px;
+            border: 1px solid #b5c6b3;
+            padding: 8px 12px;
+            border-radius: 20px;
+        }
+
+        .layout {
+            display: flex;
+            min-height: 700px;
+        }
+
+        .sidebar {
+            width: 320px;
+            min-width: 290px;
+            background: #f8f7f1;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid #d8ddcf;
+        }
+
+        .sidebar h2 {
+            font-size: 19px;
+            margin: 0 0 6px;
+        }
+
+        .description {
+            font-size: 13px;
+            color: #657267;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .section {
+            border-top: 1px solid #d8ddcf;
+            padding: 17px 0;
+        }
+
+        .section h3 {
+            font-size: 14px;
+            margin: 0 0 12px;
+            color: #294b38;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        #search {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #cbd4c8;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .layer-option {
+            display: block;
+            margin: 12px 0;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .layer-option input {
+            margin-right: 8px;
+            accent-color: #294b38;
+        }
+
+        .dot {
+            display: inline-block;
+            height: 11px;
+            width: 11px;
+            border-radius: 50%;
+            margin-right: 7px;
+        }
+
+        .info-box {
+            background: white;
+            border: 1px solid #dce1d6;
+            border-radius: 7px;
+            padding: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+            min-height: 65px;
+            overflow-wrap: anywhere;
+        }
+
+        .info-box p {
+            margin: 5px 0;
+        }
+
+        .map-area {
+            flex: 1;
+            min-width: 0;
+            padding: 15px;
+        }
+
+        #map {
+            width: 100%;
+            height: 670px;
+            border-radius: 9px;
+            border: 2px solid #294b38;
+            box-shadow: 0 3px 12px rgba(0,0,0,.15);
+        }
+
+        .map-tools {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            color: #596b5c;
+        }
+
+        button {
+            background: #294b38;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 9px 13px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #41664c;
+        }
+
+        .legend {
+            background: white;
+            padding: 11px 14px;
+            border-radius: 7px;
+            box-shadow: 0 1px 7px rgba(0,0,0,.25);
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        .legend strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        footer {
+            background: #294b38;
+            color: white;
+            padding: 14px;
+            text-align: center;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        @media (max-width: 800px) {
+            .layout {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .map-area {
+                padding: 10px;
+            }
+
+            #map {
+                height: 550px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <div>
+        <h1>USA NATURAL HIDDEN GEMS</h1>
+        <p>An Interactive Guide to America's Natural Beauty</p>
+    </div>
+
+    <div class="header-tag">CCE 114 · GEOMATICS</div>
+</header>
+
+<div class="layout">
+
+    <aside class="sidebar">
+
+        <h2>Explore Natural Hidden Gems</h2>
+
+        <p class="description">
+            Discover the natural beauty of America.
+            Explore unique landscapes, beautiful water features,
+            mountain destinations, and national parks.
+            Select a layer or click a location on the map
+            to learn more.
+        </p>
+
+        <div class="section">
+            <h3>Find a Hidden Gem</h3>
+            <input
+                type="text"
+                id="search"
+                placeholder="Search by location name..."
+            >
+            <button id="searchButton" style="width:100%; margin-top:8px;">
+                Search Map
+            </button>
+            <p id="searchMessage" style="font-size:12px;"></p>
+        </div>
+
+        <div class="section">
+            <h3>Map Layers</h3>
+
+            <label class="layer-option">
+                <input type="checkbox" id="uniqueToggle" checked>
+                <span class="dot" style="background:blue;"></span>
+                Unique Landscapes
+            </label>
+
+            <label class="layer-option">
+                <input type="checkbox" id="waterToggle" checked>
+                <span class="dot" style="background:cyan;"></span>
+                Water Features
+            </label>
+
+            <label class="layer-option">
+                <input type="checkbox" id="mountainToggle" checked>
+                <span class="dot" style="background:green;"></span>
+                Mountain Features
+            </label>
+
+            <label class="layer-option">
+                <input type="checkbox" id="parksToggle" checked>
+                <span class="dot" style="background:orange;"></span>
+                National Parks
+            </label>
+        </div>
+
+        <div class="section">
+            <h3>Selected Location</h3>
+
+            <div class="info-box" id="featureInfo">
+                Click a feature on the map to see its information here.
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Map Legend</h3>
+
+            <div style="font-size:13px; line-height:2;">
+                <div><span class="dot" style="background:blue;"></span> Unique Landscapes</div>
+                <div><span class="dot" style="background:cyan;"></span> Water Features</div>
+                <div><span class="dot" style="background:green;"></span> Mountain Features</div>
+                <div><span class="dot" style="background:orange;"></span> National Parks</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>About This Map</h3>
+
+            <p style="font-size:13px; line-height:1.6;">
+                This interactive map highlights natural attractions
+                and geographic features. It includes four different
+                map layers: unique landscapes, water features,
+                mountain features, and national parks.
+            </p>
+
+            <p style="font-size:13px; line-height:1.6;">
+                Use the checkboxes to turn map layers on and off,
+                search for a location by name, or click a feature
+                to view its information. The goal of this project
+                is to encourage exploration and appreciation of
+                America's diverse natural landscapes.
+            </p>
+        </div>
+
+        <div class="section">
+            <h3>AI Note</h3>
+
+            <p style="font-size:13px; line-height:1.6;">
+                I used AI as a tool to help improve the design
+                and organization of my interactive map. Some
+                prompts I used included asking how to make the
+                map look more like my reference example, how to
+                add an About This Map section, and how to include
+                an AI note.
+            </p>
+
+            <p style="font-size:13px; line-height:1.6;">
+                AI also helped me work through the HTML and
+                JavaScript structure. One thing I checked was
+                that the OpenStreetMap attribution was included
+                for the basemap. I reviewed the map layers,
+                search feature, location information, legend,
+                and reset button as part of checking my project.
+            </p>
+        </div>
+
+        <div class="section">
+            <h3>Data Sources</h3>
+
+            <p style="font-size:13px; line-height:1.6;">
+                <strong>Basemap:</strong><br>
+                OpenStreetMap contributors
+            </p>
+
+            <p style="font-size:13px; line-height:1.6;">
+                <strong>National Parks:</strong><br>
+                U.S. Department of Transportation,
+                Bureau of Transportation Statistics
+                (USDOT BTS), ArcGIS Online
+            </p>
+
+            <p style="font-size:13px; line-height:1.6;">
+                Additional geographic data is included
+                in the individual GeoJSON datasets used
+                for the map layers.
+            </p>
+        </div>
+
+    </aside>
+
+    <main class="map-area">
+
+        <div class="map-tools">
+            <span>Interactive Map of America's Natural Features</span>
+
+            <button id="resetMap">
+                Reset Map View
+            </button>
+        </div>
+
+        <div id="map"></div>
+
+    </main>
+
+</div>
+
+<footer>
+    Created by Amber Rouse | CCE 114 Geomatics
+    <br>
+    Basemap: OpenStreetMap contributors |
+    Geographic data: See individual dataset sources
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+    // Initialize map
+    var map = L.map('map').setView([39.5, -111.5], 6);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Add scale bar
+    L.control.scale({
+        imperial: true,
+        metric: true
+    }).addTo(map);
+
+    // Store loaded layers
+    var layers = {};
+
+    var selectedFeatures = [];
+
+    // Display selected feature information
+    function showFeatureInfo(properties) {
+
+        var info = document.getElementById('featureInfo');
+
+        if (!properties || Object.keys(properties).length === 0) {
+            info.textContent = 'No additional information available.';
+            return;
+        }
+
+        info.innerHTML = Object.entries(properties)
+            .map(([key, value]) =>
+                `<p><strong>${key}:</strong> ${value}</p>`
+            )
+            .join('');
+
+    }
+
+    // Load GeoJSON layers
+    function loadLayer(file, name, color, toggleId) {
+
+        fetch(file)
+            .then(response => {
+
+                if (!response.ok) {
+                    throw new Error('Could not find ' + file);
+                }
+
+                return response.json();
+
+            })
+
+            .then(data => {
+
+                var newLayer = L.geoJSON(data, {
+
+                    style: {
+                        color: color,
+                        weight: 2,
+                        fillOpacity: 0.35
+                    },
+
+                    pointToLayer: function(feature, latlng) {
+
+                        return L.circleMarker(latlng, {
+                            radius: 6,
+                            color: color,
+                            fillColor: color,
+                            fillOpacity: 0.85
+                        });
+
+                    },
+
+                    onEachFeature: function(feature, layer) {
+
+                        var properties = feature.properties || {};
+
+                        layer.bindPopup(
+                            Object.entries(properties)
+                                .map(([key, value]) =>
+                                    `<strong>${key}:</strong> ${value}`
+                                )
+                                .join('<br>') || 'No information available.'
+                        );
+
+                        layer.on('click', function() {
+                            showFeatureInfo(properties);
+                        });
+
+                        if (properties && Object.keys(properties).length > 0) {
+                            selectedFeatures.push({
+                                properties: properties,
+                                layer: layer
+                            });
+                        }
+
+                    }
+
+                });
+
+                layers[name] = newLayer;
+
+                newLayer.addTo(map);
+
+                // Connect sidebar checkbox
+                document.getElementById(toggleId).addEventListener(
+                    'change',
+                    function(event) {
+
+                        if (event.target.checked) {
+                            newLayer.addTo(map);
+                        } else {
+                            map.removeLayer(newLayer);
+                        }
+
+                    }
+                );
+
+                console.log(name + ' loaded successfully!');
+
+            })
+
+            .catch(error => {
+                console.error('Error loading ' + name + ':', error);
+                document.getElementById('searchMessage').textContent =
+                    'A layer could not be loaded. Check the browser console.';
+            });
+
+    }
+
+    // Load all four GeoJSON layers
+    loadLayer(
+        'UniqueLandscapes.geojson',
+        'Unique Landscapes',
+        'blue',
+        'uniqueToggle'
+    );
+
+    loadLayer(
+        'WaterFeatures.geojson',
+        'Water Features',
+        'cyan',
+        'waterToggle'
+    );
+
+    loadLayer(
+        'MountainFeatures.geojson',
+        'Mountain Features',
+        'green',
+        'mountainToggle'
+    );
+
+    loadLayer(
+        'NationalParks.geojson',
+        'National Parks',
+        'orange',
+        'parksToggle'
+    );
+
+    // Search loaded feature attributes
+    function searchMap() {
+
+        var query = document.getElementById('search')
+            .value.trim().toLowerCase();
+
+        var message = document.getElementById('searchMessage');
+
+        if (!query) {
+            message.textContent = 'Please enter a search term.';
+            return;
+        }
+
+        var matches = selectedFeatures.filter(item => {
+
+            return Object.values(item.properties)
+                .some(value =>
+                    String(value).toLowerCase().includes(query)
+                );
+
+        });
+
+        if (matches.length > 0) {
+
+            var match = matches[0];
+
+            var bounds = match.layer.getBounds &&
+                match.layer.getBounds().isValid()
+                ? match.layer.getBounds()
+                : null;
+
+            if (bounds) {
+                map.fitBounds(bounds, {maxZoom: 12});
+            } else if (match.layer.getLatLng) {
+                map.setView(match.layer.getLatLng(), 12);
+            }
+
+            match.layer.openPopup();
+
+            showFeatureInfo(match.properties);
+
+            message.textContent =
+                matches.length + ' matching feature(s) found.';
+
+        } else {
+
+            message.textContent =
+                'No matching features found in the loaded data.';
+
+        }
+
+    }
+
+    document.getElementById('searchButton')
+        .addEventListener('click', searchMap);
+
+    document.getElementById('search')
+        .addEventListener('keydown', function(event) {
+
+            if (event.key === 'Enter') {
+                searchMap();
+            }
+
+        });
+
+    // Reset map
+    document.getElementById('resetMap')
+        .addEventListener('click', function() {
+
+            map.setView([39.5, -111.5], 6);
+
+            document.getElementById('featureInfo').textContent =
+                'Click a feature on the map to see its information here.';
+
+        });
+
+</script>
+
+</body>
+</html>
